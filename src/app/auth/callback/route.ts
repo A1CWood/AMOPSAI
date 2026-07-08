@@ -1,0 +1,20 @@
+import { NextResponse, type NextRequest } from "next/server";
+
+import { createClient } from "@/lib/supabase/server";
+
+// Handles the redirect from Supabase invite/recovery emails: exchanges the
+// one-time code for a session, then sends the user to set a password.
+export async function GET(request: NextRequest) {
+  const { searchParams, origin } = request.nextUrl;
+  const code = searchParams.get("code");
+
+  if (code) {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    if (!error) {
+      return NextResponse.redirect(`${origin}/update-password`);
+    }
+  }
+
+  return NextResponse.redirect(`${origin}/login`);
+}
