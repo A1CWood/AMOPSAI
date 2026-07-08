@@ -8,20 +8,27 @@ import { signOutAction } from "@/app/(app)/actions";
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-10 border-b bg-background">
-      <div className="flex h-16 items-center gap-3 px-4">
+    <header className="sticky top-0 z-10">
+      <div className="flex items-center gap-3 bg-[#333] px-4 py-2">
         <MobileNav />
-        <img src="/resources/pacaf.png" alt="" className="h-10 w-auto" />
-        <h1 className="flex-1 truncate text-base font-semibold sm:text-lg">
+        <img src="/resources/pacaf.png" alt="" className="h-10 w-auto sm:h-14" />
+        <h1 className="flex-1 truncate text-center text-base font-bold text-white sm:text-2xl">
           Eielson Airfield Management
         </h1>
-        <img src="/resources/354oss.png" alt="" className="hidden h-10 w-auto sm:block" />
-        <DesktopNav />
+        <img src="/resources/354oss.png" alt="" className="hidden h-10 w-auto sm:block sm:h-14" />
         <form action={signOutAction}>
-          <Button variant="ghost" size="icon" className="min-h-11 min-w-11" aria-label="Sign out">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="min-h-11 min-w-11 text-white hover:bg-white/10 hover:text-white"
+            aria-label="Sign out"
+          >
             <LogOut className="size-5" />
           </Button>
         </form>
+      </div>
+      <div className="hidden justify-center bg-[#444] md:flex">
+        <DesktopNav />
       </div>
     </header>
   );

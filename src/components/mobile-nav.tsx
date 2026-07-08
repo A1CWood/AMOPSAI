@@ -27,16 +27,16 @@ export function MobileNav() {
           <Button
             variant="ghost"
             size="icon"
-            className="min-h-11 min-w-11 md:hidden"
+            className="min-h-11 min-w-11 text-white hover:bg-white/10 hover:text-white md:hidden"
             aria-label="Open navigation menu"
           />
         }
       >
         <Menu className="size-6" />
       </SheetTrigger>
-      <SheetContent side="left" className="w-64">
+      <SheetContent side="left" className="w-64 border-[#444] bg-[#333]">
         <SheetHeader>
-          <SheetTitle>AMOPS</SheetTitle>
+          <SheetTitle className="text-white">AMOPS</SheetTitle>
         </SheetHeader>
         <nav className="flex flex-col gap-1 px-2">
           {NAV_LINKS.map((link) => (
@@ -45,10 +45,8 @@ export function MobileNav() {
               href={link.href}
               onClick={() => setOpen(false)}
               className={cn(
-                "flex min-h-11 items-center rounded-md px-3 text-sm font-medium",
-                pathname === link.href
-                  ? "bg-secondary text-secondary-foreground"
-                  : "text-muted-foreground hover:bg-secondary hover:text-secondary-foreground",
+                "flex min-h-11 items-center rounded-md px-3 text-sm font-medium text-white",
+                pathname === link.href ? "bg-[#555]" : "hover:bg-[#555]",
               )}
             >
               {link.label}
