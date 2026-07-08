@@ -11,11 +11,15 @@ export function SiteHeader() {
     <header className="sticky top-0 z-10">
       <div className="flex items-center gap-3 bg-[#333] px-4 py-2">
         <MobileNav />
-        <img src="/resources/pacaf.png" alt="" className="h-10 w-auto sm:h-14" />
+        <img src="/resources/pacaf.png" alt="" className="h-14 w-auto sm:h-24 lg:h-28" />
         <h1 className="flex-1 truncate text-center text-base font-bold text-white sm:text-2xl">
           Eielson Airfield Management
         </h1>
-        <img src="/resources/354oss.png" alt="" className="hidden h-10 w-auto sm:block sm:h-14" />
+        <img
+          src="/resources/354oss.png"
+          alt=""
+          className="hidden h-14 w-auto sm:block sm:h-24 lg:h-28"
+        />
         <form action={signOutAction}>
           <Button
             variant="ghost"
