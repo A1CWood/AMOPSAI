@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react";
 import { Plus, X } from "lucide-react";
-import { toast } from "sonner";
 
 import {
   generatePlans,
@@ -11,47 +10,9 @@ import {
   TemplateParseError,
   type FormationRow,
 } from "@/lib/aisr";
+import { copyToClipboard } from "@/lib/clipboard";
 
 const BATCH_SIZE_OPTIONS = [1, 2, 3, 4, 5];
-
-function legacyCopy(text: string): boolean {
-  const textarea = document.createElement("textarea");
-  textarea.value = text;
-  textarea.style.position = "fixed";
-  textarea.style.opacity = "0";
-  document.body.appendChild(textarea);
-  textarea.select();
-  let ok = false;
-  try {
-    ok = document.execCommand("copy");
-  } catch {
-    ok = false;
-  }
-  document.body.removeChild(textarea);
-  return ok;
-}
-
-function copyToClipboard(text: string) {
-  if (navigator.clipboard?.writeText) {
-    navigator.clipboard
-      .writeText(text)
-      .then(() => toast.success("Copied to clipboard"))
-      .catch(() => {
-        if (legacyCopy(text)) {
-          toast.success("Copied to clipboard");
-        } else {
-          toast.error("Failed to copy");
-        }
-      });
-    return;
-  }
-
-  if (legacyCopy(text)) {
-    toast.success("Copied to clipboard");
-  } else {
-    toast.error("Failed to copy");
-  }
-}
 
 export function AisrTool() {
   const [rawTemplate, setRawTemplate] = useState("");

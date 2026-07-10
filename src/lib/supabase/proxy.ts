@@ -1,16 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/auth/callback"];
-
-function isPublicPath(pathname: string) {
-  return (
-    PUBLIC_PATHS.some((path) => pathname === path || pathname.startsWith(`${path}/`)) ||
-    pathname === "/manifest.webmanifest" ||
-    pathname.startsWith("/resources/")
-  );
-}
-
+// The site is public - no route is gated here. This only keeps the
+// Supabase session cookie refreshed on every request so that signed-in
+// editors (Warm Status Schedule, Lighting Map) stay logged in. Actual
+// write protection lives in RLS policies and each server action's own
+// auth.getUser() check, not here.
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
 
@@ -38,16 +33,7 @@ export async function updateSession(request: NextRequest) {
   // Do not add logic between createServerClient and getUser(). A simple
   // mistake could make it very hard to debug issues with users being
   // randomly logged out.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user && !isPublicPath(request.nextUrl.pathname)) {
-    const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = "/login";
-    loginUrl.searchParams.set("next", request.nextUrl.pathname);
-    return NextResponse.redirect(loginUrl);
-  }
+  await supabase.auth.getUser();
 
   return supabaseResponse;
 }

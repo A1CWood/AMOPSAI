@@ -1,6 +1,9 @@
-// Ported from the old log/log.html canned templates and restructured into
-// named fields so the /log/new form can render inputs instead of raw
-// underscore blanks.
+// Ported from the old log/log.html canned templates. Field metadata is kept
+// (rather than raw text) since it documents what each blank represents;
+// renderLogTemplate(template, {}) turns it back into blanked-out copy-paste
+// text for the Log browser (src/components/log-browser.tsx) - there's no
+// fill-in form or persistence anymore, just click-to-copy like the original
+// static site.
 //
 // ** DRAFT - NEEDS AMOPS DOMAIN REVIEW **
 // Field labels/order are a best-effort reading of the original text, not

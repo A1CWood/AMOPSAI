@@ -1,6 +1,6 @@
-// Hand-written to match supabase/migrations/0001_init.sql. If the schema
-// changes, prefer regenerating this via `supabase gen types typescript`
-// against the live project once one exists.
+// Hand-written to match supabase/migrations/*.sql. If the schema changes,
+// prefer regenerating this via `supabase gen types typescript` against the
+// live project once one exists.
 export type Database = {
   public: {
     Views: Record<string, never>;
@@ -65,46 +65,64 @@ export type Database = {
         };
         Relationships: [];
       };
-      log_entries: {
+      warm_status_days: {
         Row: {
           id: string;
-          template_code: string;
-          template_title: string;
-          body: string;
-          fields: Record<string, string>;
-          author_id: string;
-          shift_date: string;
+          date: string;
           created_at: string;
         };
         Insert: {
           id?: string;
-          template_code: string;
-          template_title: string;
-          body: string;
-          fields?: Record<string, string>;
-          author_id: string;
-          shift_date?: string;
+          date: string;
           created_at?: string;
         };
-        // No update policy exists in RLS - entries are append-only. This
-        // shape exists only to satisfy the postgrest-js GenericTable
-        // constraint, not because updates are actually possible.
         Update: {
           id?: string;
-          template_code?: string;
-          template_title?: string;
-          body?: string;
-          fields?: Record<string, string>;
-          author_id?: string;
-          shift_date?: string;
+          date?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      warm_status_entries: {
+        Row: {
+          id: string;
+          day_id: string;
+          callsign: string;
+          eta: string | null;
+          etd: string | null;
+          show_time: string | null;
+          airfield_open: string | null;
+          airfield_close: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          day_id: string;
+          callsign: string;
+          eta?: string | null;
+          etd?: string | null;
+          show_time?: string | null;
+          airfield_open?: string | null;
+          airfield_close?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          day_id?: string;
+          callsign?: string;
+          eta?: string | null;
+          etd?: string | null;
+          show_time?: string | null;
+          airfield_open?: string | null;
+          airfield_close?: string | null;
           created_at?: string;
         };
         Relationships: [
           {
-            foreignKeyName: "log_entries_author_id_fkey";
-            columns: ["author_id"];
+            foreignKeyName: "warm_status_entries_day_id_fkey";
+            columns: ["day_id"];
             isOneToOne: false;
-            referencedRelation: "profiles";
+            referencedRelation: "warm_status_days";
             referencedColumns: ["id"];
           },
         ];
