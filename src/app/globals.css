@@ -123,10 +123,15 @@
   }
   body {
     @apply bg-background text-foreground;
-    background-image: url("/resources/eielson.JPG");
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
+    /* eielson-mirror-tile.jpg is the airfield photo stacked with a
+       vertically-flipped copy of itself (see scripts/generate-mirror-tile.mjs).
+       Tiling that pair with repeat-y gives a seamless reflected pattern for
+       any page taller than one photo, instead of stretching a single cover
+       image or leaving blank space below it. */
+    background-image: url("/resources/eielson-mirror-tile.jpg");
+    background-size: 100% auto;
+    background-position: top center;
+    background-repeat: repeat-y;
   }
   html {
     @apply font-sans;

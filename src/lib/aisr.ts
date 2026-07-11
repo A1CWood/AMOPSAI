@@ -30,7 +30,8 @@ export type ParsedTemplate = {
   prefix: string; // e.g. "EIL2220" (aerodrome + filing time)
   index: string; // e.g. "001", kept as a string to preserve digit width
   callsign: string; // e.g. "VIKNG1"
-  acftType: string; // e.g. "F35/I"
+  acftType: string; // base type only, e.g. "F35" - the "/I" suffix is always
+  // appended by generatePlans, never typed by the user or stored here
   iff: string; // e.g. "6103", or "" if the template had none
   speed: string; // e.g. "450"
   departureAerodrome: string; // e.g. "EIL"
@@ -60,7 +61,10 @@ export function parseTemplate(raw: string): ParsedTemplate {
     );
   }
 
-  const [prefixAndIndex, fp, callsign, acftType, ...remaining] = tokens;
+  const [prefixAndIndex, fp, callsign, acftTypeRaw, ...remaining] = tokens;
+  // Aircraft type always ends in "/I" - strip it since generatePlans always
+  // re-appends it, so the stored/edited value is just the base type.
+  const acftType = acftTypeRaw.replace(/\/I$/i, "");
 
   if (fp !== "FP") {
     throw new TemplateParseError(`Expected "FP" as the second field, found "${fp}".`);
@@ -156,7 +160,7 @@ export function generatePlans(template: ParsedTemplate, rows: FormationRow[]): G
         `${template.prefix}${index}`,
         "FP",
         callsign,
-        row.acftType,
+        `${row.acftType}/I`,
         ...(iff ? [iff] : []),
         template.speed,
         template.departureAerodrome,
@@ -164,7 +168,8 @@ export function generatePlans(template: ParsedTemplate, rows: FormationRow[]): G
         template.flightLevel,
       ].join(" ");
 
-      plans.push({ id: `${row.id}-${i}`, text: `${line1}\n${template.routeLine}` });
+      // Output is always uppercase regardless of what the user typed.
+      plans.push({ id: `${row.id}-${i}`, text: `${line1}\n${template.routeLine}`.toUpperCase() });
     }
   }
 

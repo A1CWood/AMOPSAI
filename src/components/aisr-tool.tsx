@@ -147,8 +147,10 @@ export function AisrTool() {
                           <input
                             value={row.acftType}
                             onChange={(event) => updateRow(row.id, { acftType: event.target.value })}
+                            placeholder="F35"
                             className="w-full rounded border border-gray-300 px-2 py-1 text-sm"
                           />
+                          <span className="text-[10px] text-gray-500">&quot;/I&quot; added automatically</span>
                         </FormationField>
                         <FormationField label="IFF (optional)">
                           <input

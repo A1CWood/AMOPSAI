@@ -83,43 +83,43 @@ export type Database = {
         };
         Relationships: [];
       };
-      warm_status_entries: {
+      warm_status_rows: {
         Row: {
           id: string;
           day_id: string;
-          callsign: string;
+          position: number;
+          row_type: "show" | "open" | "flight" | "close";
+          time: string | null;
+          callsign: string | null;
           eta: string | null;
           etd: string | null;
-          show_time: string | null;
-          airfield_open: string | null;
-          airfield_close: string | null;
           created_at: string;
         };
         Insert: {
           id?: string;
           day_id: string;
-          callsign: string;
+          position?: number;
+          row_type: "show" | "open" | "flight" | "close";
+          time?: string | null;
+          callsign?: string | null;
           eta?: string | null;
           etd?: string | null;
-          show_time?: string | null;
-          airfield_open?: string | null;
-          airfield_close?: string | null;
           created_at?: string;
         };
         Update: {
           id?: string;
           day_id?: string;
-          callsign?: string;
+          position?: number;
+          row_type?: "show" | "open" | "flight" | "close";
+          time?: string | null;
+          callsign?: string | null;
           eta?: string | null;
           etd?: string | null;
-          show_time?: string | null;
-          airfield_open?: string | null;
-          airfield_close?: string | null;
           created_at?: string;
         };
         Relationships: [
           {
-            foreignKeyName: "warm_status_entries_day_id_fkey";
+            foreignKeyName: "warm_status_rows_day_id_fkey";
             columns: ["day_id"];
             isOneToOne: false;
             referencedRelation: "warm_status_days";

@@ -9,7 +9,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-svh flex-col">
-      <SiteHeader isSignedIn={Boolean(user)} />
+      <SiteHeader email={user?.email ?? null} />
       <main className="flex-1">{children}</main>
     </div>
   );

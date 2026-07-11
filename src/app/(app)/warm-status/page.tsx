@@ -12,7 +12,7 @@ export default async function WarmStatusPage() {
   const today = new Date().toISOString().slice(0, 10);
   const { data: days, error } = await supabase
     .from("warm_status_days")
-    .select("*, warm_status_entries(*)")
+    .select("*, warm_status_rows(*)")
     .gte("date", today)
     .order("date", { ascending: true });
 

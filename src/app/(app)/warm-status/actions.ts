@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 
 import { createClient } from "@/lib/supabase/server";
+import type { RowType } from "@/lib/warm-status";
 
 async function requireUser() {
   const supabase = await createClient();
@@ -56,66 +57,48 @@ export async function deleteDay(formData: FormData) {
   revalidatePath("/warm-status");
 }
 
-function readEntryFields(formData: FormData) {
-  const callsign = String(formData.get("callsign") ?? "").trim();
-  const eta = String(formData.get("eta") ?? "").trim() || null;
-  const etd = String(formData.get("etd") ?? "").trim() || null;
-  const showTime = String(formData.get("showTime") ?? "").trim() || null;
-  const airfieldOpen = String(formData.get("airfieldOpen") ?? "").trim() || null;
-  const airfieldClose = String(formData.get("airfieldClose") ?? "").trim() || null;
+export type DraftRowInput = {
+  rowType: RowType;
+  time: string | null;
+  callsign: string | null;
+  eta: string | null;
+  etd: string | null;
+};
 
-  if (!callsign) throw new Error("Callsign is required.");
-  if (!eta && !etd) throw new Error("At least one of ETA or ETD is required.");
-
-  return { callsign, eta, etd, showTime, airfieldOpen, airfieldClose };
+function validateRow(row: DraftRowInput) {
+  if (row.rowType === "flight") {
+    if (!row.callsign?.trim()) throw new Error("Every flight row needs a callsign.");
+    if (!row.eta && !row.etd) throw new Error(`Flight ${row.callsign}: at least one of ETA or ETD is required.`);
+  } else if (!row.time) {
+    throw new Error(`Every ${row.rowType} row needs a time.`);
+  }
 }
 
-export async function addEntry(formData: FormData) {
+// Rebuilds a day's entire row list in one go - simpler and safer than
+// diffing individual add/update/delete operations against whatever the
+// editor did in the popup, since the whole day is edited as a unit.
+export async function saveDayRows(dayId: string, rows: DraftRowInput[]) {
   const supabase = await requireUser();
-  const dayId = String(formData.get("dayId") ?? "");
-  const { callsign, eta, etd, showTime, airfieldOpen, airfieldClose } = readEntryFields(formData);
 
-  const { error } = await supabase.from("warm_status_entries").insert({
-    day_id: dayId,
-    callsign,
-    eta,
-    etd,
-    show_time: showTime,
-    airfield_open: airfieldOpen,
-    airfield_close: airfieldClose,
-  });
-  if (error) throw new Error(`Failed to add entry: ${error.message}`);
+  for (const row of rows) validateRow(row);
 
-  revalidatePath("/warm-status");
-}
+  const { error: deleteError } = await supabase.from("warm_status_rows").delete().eq("day_id", dayId);
+  if (deleteError) throw new Error(`Failed to save day: ${deleteError.message}`);
 
-export async function updateEntry(formData: FormData) {
-  const supabase = await requireUser();
-  const id = String(formData.get("id") ?? "");
-  const { callsign, eta, etd, showTime, airfieldOpen, airfieldClose } = readEntryFields(formData);
-
-  const { error } = await supabase
-    .from("warm_status_entries")
-    .update({
-      callsign,
-      eta,
-      etd,
-      show_time: showTime,
-      airfield_open: airfieldOpen,
-      airfield_close: airfieldClose,
-    })
-    .eq("id", id);
-  if (error) throw new Error(`Failed to update entry: ${error.message}`);
-
-  revalidatePath("/warm-status");
-}
-
-export async function deleteEntry(formData: FormData) {
-  const supabase = await requireUser();
-  const id = String(formData.get("id") ?? "");
-
-  const { error } = await supabase.from("warm_status_entries").delete().eq("id", id);
-  if (error) throw new Error(`Failed to delete entry: ${error.message}`);
+  if (rows.length > 0) {
+    const { error: insertError } = await supabase.from("warm_status_rows").insert(
+      rows.map((row, index) => ({
+        day_id: dayId,
+        position: index,
+        row_type: row.rowType,
+        time: row.time,
+        callsign: row.callsign,
+        eta: row.eta,
+        etd: row.etd,
+      })),
+    );
+    if (insertError) throw new Error(`Failed to save day: ${insertError.message}`);
+  }
 
   revalidatePath("/warm-status");
 }
