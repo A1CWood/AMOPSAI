@@ -5,7 +5,8 @@ import { Plus, X } from "lucide-react";
 
 import {
   generatePlans,
-  makeDefaultRow,
+  makeBlankRow,
+  makeContinuationRow,
   parseTemplate,
   TemplateParseError,
   type FormationRow,
@@ -34,9 +35,9 @@ export function AisrTool() {
   const effectiveRows = useMemo(() => {
     if (!parsed.template) return [];
     if (advanced) {
-      return rows.length > 0 ? rows : [makeDefaultRow(parsed.template, batchSize - 1)];
+      return rows.length > 0 ? rows : [makeBlankRow(4)];
     }
-    return [makeDefaultRow(parsed.template, batchSize - 1)];
+    return [makeContinuationRow(parsed.template, batchSize - 1)];
   }, [parsed.template, advanced, rows, batchSize]);
 
   function handleGenerate() {
@@ -45,11 +46,7 @@ export function AisrTool() {
   }
 
   function addRow() {
-    if (!parsed.template) return;
-    setRows((current) => [
-      ...(current.length > 0 ? current : effectiveRows),
-      makeDefaultRow(parsed.template!, 4),
-    ]);
+    setRows((current) => [...(current.length > 0 ? current : effectiveRows), makeBlankRow(4)]);
   }
 
   function removeRow(id: string) {
@@ -67,18 +64,16 @@ export function AisrTool() {
   const displayRows = advanced ? effectiveRows : [];
 
   return (
-    <div className="mx-auto max-w-4xl rounded-2xl bg-white p-6 text-black shadow-xl sm:p-8">
+    <div className="mx-auto max-w-4xl rounded-2xl bg-[#B0C4DE] p-6 text-black shadow-xl sm:p-8">
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="flex flex-col gap-3">
           <h2 className="text-center text-xl font-bold">Flight Plan</h2>
           <textarea
             value={rawTemplate}
             onChange={(event) => setRawTemplate(event.target.value)}
-            placeholder={
-              "EIL2220001 FP VIKNG1 F35/I 6103 450 EIL P2325 200B240\nEIL.ARUNY4.ARUNY/D2+00..ARUNY..BOGIE..EIL/0125 : SP100"
-            }
+            placeholder="Paste flight plan here."
             rows={4}
-            className="min-h-28 w-full rounded-md border border-gray-300 bg-white p-3 font-mono text-sm text-black"
+            className="min-h-28 w-full rounded-md border border-gray-400 bg-white p-3 font-mono text-sm text-black placeholder:text-gray-500"
           />
           {parsed.error ? <p className="text-sm text-red-600">{parsed.error}</p> : null}
 
@@ -98,7 +93,7 @@ export function AisrTool() {
               <select
                 value={batchSize}
                 onChange={(event) => setBatchSize(Number(event.target.value))}
-                className="rounded border border-gray-300 bg-white px-2 py-1 text-sm text-black"
+                className="rounded border border-gray-400 bg-white px-2 py-1 text-sm text-black"
               >
                 {BATCH_SIZE_OPTIONS.map((size) => (
                   <option key={size} value={size}>
@@ -113,9 +108,9 @@ export function AisrTool() {
             type="button"
             onClick={handleGenerate}
             disabled={!parsed.template}
-            className="min-h-11 rounded-md bg-gray-200 px-4 py-2 text-sm font-medium hover:bg-gray-300 disabled:cursor-not-allowed disabled:opacity-50"
+            className="min-h-11 rounded-md bg-white px-4 py-2 text-sm font-medium hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            generate
+            Generate
           </button>
         </div>
 
@@ -123,12 +118,12 @@ export function AisrTool() {
           <div className="flex flex-col gap-3">
             <h2 className="text-center text-xl font-bold">Formations</h2>
             {!parsed.template ? (
-              <p className="text-sm text-gray-500">Paste a template flight plan to configure formations.</p>
+              <p className="text-sm text-gray-700">Paste a template flight plan to configure formations.</p>
             ) : (
               <>
                 <div className="flex flex-col gap-3">
                   {displayRows.map((row) => (
-                    <div key={row.id} className="flex flex-col gap-2 rounded-md border border-gray-300 p-3">
+                    <div key={row.id} className="flex flex-col gap-2 rounded-md border border-gray-400 bg-white p-3">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-semibold text-gray-500">Formation</span>
                         <button
@@ -155,7 +150,7 @@ export function AisrTool() {
                             className="w-full rounded border border-gray-300 px-2 py-1 text-sm"
                           />
                         </FormationField>
-                        <FormationField label="IFF">
+                        <FormationField label="IFF (optional)">
                           <input
                             value={row.iff}
                             onChange={(event) => updateRow(row.id, { iff: event.target.value })}
@@ -188,7 +183,7 @@ export function AisrTool() {
                 <button
                   type="button"
                   onClick={addRow}
-                  className="flex min-h-11 items-center justify-center gap-1 rounded-md border border-dashed border-gray-400 py-2 text-sm font-medium hover:bg-gray-100"
+                  className="flex min-h-11 items-center justify-center gap-1 rounded-md border border-dashed border-gray-500 py-2 text-sm font-medium hover:bg-white/50"
                 >
                   <Plus className="size-4" />
                   Add formation
@@ -206,7 +201,7 @@ export function AisrTool() {
               key={plan.id}
               type="button"
               onClick={() => copyToClipboard(plan.text)}
-              className="whitespace-pre-wrap rounded-md bg-gray-200 p-3 text-left font-mono text-sm hover:bg-gray-300"
+              className="whitespace-pre-wrap rounded-md bg-white p-3 text-left font-mono text-sm hover:bg-gray-100"
             >
               {plan.text}
             </button>

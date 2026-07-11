@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { addEntry, updateEntry } from "@/app/(app)/warm-status/actions";
-import { computeDefaultClose, computeDefaultOpen } from "@/lib/warm-status";
+import { computeDefaultClose, computeDefaultOpen, computeDefaultShow } from "@/lib/warm-status";
 import type { Database } from "@/lib/supabase/types";
 
 type Entry = Database["public"]["Tables"]["warm_status_entries"]["Row"];
@@ -27,58 +27,64 @@ type Props =
   | { mode: "add"; dayId: string }
   | { mode: "edit"; entry: Entry };
 
-const emptyFields = {
-  callsign: "",
-  eta: "",
-  etd: "",
-  showTime: "",
-  airfieldOpen: "",
-  airfieldClose: "",
-};
+type AutoField = { value: string; enabled: boolean; dirty: boolean };
 
 export function WarmStatusEntryDialog(props: Props) {
   const idPrefix = useId();
-  const [open, setOpen] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const existing = props.mode === "edit" ? props.entry : null;
 
-  const [fields, setFields] = useState(
-    existing
-      ? {
-          callsign: existing.callsign,
-          eta: existing.eta ?? "",
-          etd: existing.etd ?? "",
-          showTime: existing.show_time ?? "",
-          airfieldOpen: existing.airfield_open ?? "",
-          airfieldClose: existing.airfield_close ?? "",
-        }
-      : emptyFields,
+  const [callsign, setCallsign] = useState(existing?.callsign ?? "");
+  const [eta, setEta] = useState(existing?.eta ?? "");
+  const [etd, setEtd] = useState(existing?.etd ?? "");
+  const [show, setShow] = useState<AutoField>(
+    existing ? { value: existing.show_time ?? "", enabled: Boolean(existing.show_time), dirty: Boolean(existing.show_time) } : { value: "", enabled: true, dirty: false },
+  );
+  const [airfieldOpen, setAirfieldOpen] = useState<AutoField>(
+    existing ? { value: existing.airfield_open ?? "", enabled: Boolean(existing.airfield_open), dirty: Boolean(existing.airfield_open) } : { value: "", enabled: true, dirty: false },
+  );
+  const [airfieldClose, setAirfieldClose] = useState<AutoField>(
+    existing ? { value: existing.airfield_close ?? "", enabled: Boolean(existing.airfield_close), dirty: Boolean(existing.airfield_close) } : { value: "", enabled: true, dirty: false },
   );
 
-  function handleOpenChange(next: boolean) {
-    setOpen(next);
-    // Adding (not editing) reuses the same component instance across
-    // opens - Base UI hides rather than unmounts - so reset the form each
-    // time it opens for a fresh entry, otherwise the previous entry's
-    // values leak into the next one.
-    if (next && props.mode === "add") {
-      setFields(emptyFields);
-    }
+  function recompute(nextEta: string, nextEtd: string) {
+    setShow((current) =>
+      current.enabled && !current.dirty
+        ? { ...current, value: computeDefaultShow(nextEta, nextEtd) ?? current.value }
+        : current,
+    );
+    setAirfieldOpen((current) =>
+      current.enabled && !current.dirty
+        ? { ...current, value: computeDefaultOpen(nextEta, nextEtd) ?? current.value }
+        : current,
+    );
+    setAirfieldClose((current) =>
+      current.enabled && !current.dirty
+        ? { ...current, value: computeDefaultClose(nextEta, nextEtd) ?? current.value }
+        : current,
+    );
   }
 
   function handleEtaChange(value: string) {
-    setFields((current) => {
-      const open = current.airfieldOpen || computeDefaultOpen(value, current.etd) || current.airfieldOpen;
-      const close = current.airfieldClose || computeDefaultClose(value, current.etd) || current.airfieldClose;
-      return { ...current, eta: value, airfieldOpen: open, airfieldClose: close };
-    });
+    setEta(value);
+    recompute(value, etd);
   }
 
   function handleEtdChange(value: string) {
-    setFields((current) => {
-      const open = current.airfieldOpen || computeDefaultOpen(current.eta, value) || current.airfieldOpen;
-      const close = current.airfieldClose || computeDefaultClose(current.eta, value) || current.airfieldClose;
-      return { ...current, etd: value, airfieldOpen: open, airfieldClose: close };
-    });
+    setEtd(value);
+    recompute(eta, value);
+  }
+
+  function toggleField(
+    setter: React.Dispatch<React.SetStateAction<AutoField>>,
+    compute: (eta: string, etd: string) => string | undefined,
+    checked: boolean,
+  ) {
+    setter((current) =>
+      checked
+        ? { value: compute(eta, etd) ?? current.value, enabled: true, dirty: false }
+        : { ...current, enabled: false },
+    );
   }
 
   async function handleSubmit(formData: FormData) {
@@ -89,14 +95,26 @@ export function WarmStatusEntryDialog(props: Props) {
         await updateEntry(formData);
       }
       toast.success("Saved");
-      handleOpenChange(false);
+      setDialogOpen(false);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Failed to save");
     }
   }
 
+  function handleOpenChange(next: boolean) {
+    setDialogOpen(next);
+    if (next && props.mode === "add") {
+      setCallsign("");
+      setEta("");
+      setEtd("");
+      setShow({ value: "", enabled: true, dirty: false });
+      setAirfieldOpen({ value: "", enabled: true, dirty: false });
+      setAirfieldClose({ value: "", enabled: true, dirty: false });
+    }
+  }
+
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger
         render={
           props.mode === "add" ? (
@@ -132,10 +150,8 @@ export function WarmStatusEntryDialog(props: Props) {
               name="callsign"
               maxLength={7}
               required
-              value={fields.callsign}
-              onChange={(event) =>
-                setFields((current) => ({ ...current, callsign: event.target.value.toUpperCase() }))
-              }
+              value={callsign}
+              onChange={(event) => setCallsign(event.target.value.toUpperCase())}
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
@@ -147,7 +163,7 @@ export function WarmStatusEntryDialog(props: Props) {
                 placeholder="1600"
                 inputMode="numeric"
                 pattern={TIME_PATTERN}
-                value={fields.eta}
+                value={eta}
                 onChange={(event) => handleEtaChange(event.target.value)}
               />
             </div>
@@ -159,54 +175,40 @@ export function WarmStatusEntryDialog(props: Props) {
                 placeholder="1800"
                 inputMode="numeric"
                 pattern={TIME_PATTERN}
-                value={fields.etd}
+                value={etd}
                 onChange={(event) => handleEtdChange(event.target.value)}
               />
             </div>
           </div>
           <p className="text-xs text-muted-foreground">At least one of ETA or ETD is required.</p>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor={`${idPrefix}-showTime`}>Show time (AMOPS personnel)</Label>
-            <Input
-              id={`${idPrefix}-showTime`}
-              name="showTime"
-              placeholder="1500"
-              inputMode="numeric"
-              pattern={TIME_PATTERN}
-              value={fields.showTime}
-              onChange={(event) => setFields((current) => ({ ...current, showTime: event.target.value }))}
+
+          <AutoFieldRow
+            idPrefix={`${idPrefix}-show`}
+            name="showTime"
+            label="Show time (AMOPS personnel)"
+            field={show}
+            onValueChange={(value) => setShow((current) => ({ ...current, value, dirty: true }))}
+            onToggle={(checked) => toggleField(setShow, computeDefaultShow, checked)}
+          />
+          <div className="grid grid-cols-2 gap-3">
+            <AutoFieldRow
+              idPrefix={`${idPrefix}-open`}
+              name="airfieldOpen"
+              label="Airfield open"
+              field={airfieldOpen}
+              onValueChange={(value) => setAirfieldOpen((current) => ({ ...current, value, dirty: true }))}
+              onToggle={(checked) => toggleField(setAirfieldOpen, computeDefaultOpen, checked)}
+            />
+            <AutoFieldRow
+              idPrefix={`${idPrefix}-close`}
+              name="airfieldClose"
+              label="Airfield close"
+              field={airfieldClose}
+              onValueChange={(value) => setAirfieldClose((current) => ({ ...current, value, dirty: true }))}
+              onToggle={(checked) => toggleField(setAirfieldClose, computeDefaultClose, checked)}
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor={`${idPrefix}-airfieldOpen`}>Airfield open</Label>
-              <Input
-                id={`${idPrefix}-airfieldOpen`}
-                name="airfieldOpen"
-                placeholder="1500"
-                inputMode="numeric"
-                pattern={TIME_PATTERN}
-                value={fields.airfieldOpen}
-                onChange={(event) =>
-                  setFields((current) => ({ ...current, airfieldOpen: event.target.value }))
-                }
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor={`${idPrefix}-airfieldClose`}>Airfield close</Label>
-              <Input
-                id={`${idPrefix}-airfieldClose`}
-                name="airfieldClose"
-                placeholder="1830"
-                inputMode="numeric"
-                pattern={TIME_PATTERN}
-                value={fields.airfieldClose}
-                onChange={(event) =>
-                  setFields((current) => ({ ...current, airfieldClose: event.target.value }))
-                }
-              />
-            </div>
-          </div>
+
           <DialogFooter>
             <Button type="submit" className="min-h-11">
               Save
@@ -215,5 +217,53 @@ export function WarmStatusEntryDialog(props: Props) {
         </form>
       </DialogContent>
     </Dialog>
+  );
+}
+
+function AutoFieldRow({
+  idPrefix,
+  name,
+  label,
+  field,
+  onValueChange,
+  onToggle,
+}: {
+  idPrefix: string;
+  name: string;
+  label: string;
+  field: AutoField;
+  onValueChange: (value: string) => void;
+  onToggle: (checked: boolean) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex items-center justify-between">
+        <Label htmlFor={idPrefix} className={field.enabled ? "" : "text-muted-foreground"}>
+          {label}
+        </Label>
+        <label className="flex items-center gap-1 text-xs text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={field.enabled}
+            onChange={(event) => onToggle(event.target.checked)}
+            className="size-3.5"
+          />
+          Include
+        </label>
+      </div>
+      {field.enabled ? (
+        <Input
+          id={idPrefix}
+          name={name}
+          placeholder="1500"
+          inputMode="numeric"
+          pattern={TIME_PATTERN}
+          value={field.value}
+          onChange={(event) => onValueChange(event.target.value)}
+        />
+      ) : (
+        <p className="flex h-9 items-center text-sm text-muted-foreground italic">Not included</p>
+      )}
+    </div>
   );
 }

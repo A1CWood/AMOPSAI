@@ -5,22 +5,33 @@
 //   EIL.ARUNY4.ARUNY/D2+00..ARUNY..BOGIE..EIL/0125 : SP100
 //
 // Line 1 fields (space-separated): <aerodrome+filing-time><index> FP
-// <callsign> <acft type/equipment> <IFF> <speed> <departure aerodrome>
+// <callsign> <acft type/equipment> [<IFF>] <speed> <departure aerodrome>
 // <departure time> <flight level>. Line 2 is the route + SP designator.
 //
-// Across a formation only the batch index, callsign number, and IFF
-// (a base-8/octal squawk code) increment; everything else on line 1 and
-// all of line 2 stay fixed from the template. Each "row" in the UI
-// specifies its own starting callsign/acft type/IFF/departure time and a
-// quantity of aircraft to generate from there - basic mode is just a
-// single auto-filled row continuing right after the pasted template.
+// IFF is optional - not every flight plan carries one. It always sits
+// right after the aircraft type when present. Since IFF codes are always
+// 4 digits and speed is always <= 3 digits, the token right after the
+// aircraft type disambiguates the two: 4 digits -> IFF (speed follows);
+// anything shorter -> that token *is* the speed, no IFF was given.
+//
+// Across a formation only the batch index, callsign number, and IFF (a
+// base-8/octal squawk code, when present) increment; everything else on
+// line 1 and all of line 2 stay fixed from the template. Each "row" in
+// the UI specifies its own starting callsign/acft type/IFF/departure time
+// and a quantity of aircraft to generate from there.
+//
+// Basic mode assumes the pasted plan is a real, already-filed aircraft #1
+// and continues the formation from it (callsign/IFF + 1). Advanced mode
+// assumes the paste is just a blank SP-route template with no meaningful
+// per-aircraft data in it - every row starts blank and the user fills in
+// everything themselves, since there's nothing real to continue from.
 
 export type ParsedTemplate = {
   prefix: string; // e.g. "EIL2220" (aerodrome + filing time)
   index: string; // e.g. "001", kept as a string to preserve digit width
   callsign: string; // e.g. "VIKNG1"
   acftType: string; // e.g. "F35/I"
-  iff: string; // e.g. "6103"
+  iff: string; // e.g. "6103", or "" if the template had none
   speed: string; // e.g. "450"
   departureAerodrome: string; // e.g. "EIL"
   departureTime: string; // e.g. "P2325"
@@ -43,14 +54,13 @@ export function parseTemplate(raw: string): ParsedTemplate {
 
   const [line1, routeLine] = lines;
   const tokens = line1.split(/\s+/);
-  if (tokens.length !== 9) {
+  if (tokens.length < 8) {
     throw new TemplateParseError(
-      `Expected 9 fields on the first line, found ${tokens.length}. Check the format matches: EIL2220001 FP VIKNG1 F35/I 6103 450 EIL P2325 200B240`,
+      `Expected at least 8 fields on the first line, found ${tokens.length}. Check the format matches: EIL2220001 FP VIKNG1 F35/I [6103] 450 EIL P2325 200B240`,
     );
   }
 
-  const [prefixAndIndex, fp, callsign, acftType, iff, speed, departureAerodrome, departureTime, flightLevel] =
-    tokens;
+  const [prefixAndIndex, fp, callsign, acftType, ...remaining] = tokens;
 
   if (fp !== "FP") {
     throw new TemplateParseError(`Expected "FP" as the second field, found "${fp}".`);
@@ -64,8 +74,24 @@ export function parseTemplate(raw: string): ParsedTemplate {
   }
   const [, prefix, index] = prefixMatch;
 
-  if (!/^\d+$/.test(iff)) {
-    throw new TemplateParseError(`IFF "${iff}" should be all digits (an octal squawk code).`);
+  // Token right after the aircraft type: 4 digits means IFF (speed
+  // follows); otherwise it's speed itself and no IFF was given.
+  let iff = "";
+  let rest = remaining;
+  if (/^\d{4}$/.test(remaining[0] ?? "")) {
+    iff = remaining[0];
+    rest = remaining.slice(1);
+  }
+
+  if (rest.length !== 4) {
+    throw new TemplateParseError(
+      `Expected speed, departure aerodrome, departure time, and flight level after the ${iff ? "IFF" : "aircraft type"} - found ${rest.length} fields instead.`,
+    );
+  }
+  const [speed, departureAerodrome, departureTime, flightLevel] = rest;
+
+  if (!/^\d{1,3}$/.test(speed)) {
+    throw new TemplateParseError(`Speed "${speed}" should be numeric, 3 digits or fewer.`);
   }
 
   return {
@@ -106,7 +132,7 @@ export type FormationRow = {
   id: string;
   callsign: string;
   acftType: string;
-  iff: string;
+  iff: string; // "" means no IFF for this formation
   departureTime: string;
   quantity: number;
 };
@@ -124,14 +150,14 @@ export function generatePlans(template: ParsedTemplate, rows: FormationRow[]): G
     for (let i = 0; i < row.quantity; i++) {
       index = incrementIndex(index, 1);
       const callsign = incrementCallsign(row.callsign, i);
-      const iff = incrementIff(row.iff, i);
+      const iff = row.iff ? incrementIff(row.iff, i) : "";
 
       const line1 = [
         `${template.prefix}${index}`,
         "FP",
         callsign,
         row.acftType,
-        iff,
+        ...(iff ? [iff] : []),
         template.speed,
         template.departureAerodrome,
         row.departureTime,
@@ -145,13 +171,29 @@ export function generatePlans(template: ParsedTemplate, rows: FormationRow[]): G
   return plans;
 }
 
-export function makeDefaultRow(template: ParsedTemplate, quantity: number): FormationRow {
+// Basic mode: continue the formation right after the pasted (real,
+// already-filed) template aircraft.
+export function makeContinuationRow(template: ParsedTemplate, quantity: number): FormationRow {
   return {
     id: crypto.randomUUID(),
     callsign: incrementCallsign(template.callsign, 1),
     acftType: template.acftType,
-    iff: incrementIff(template.iff, 1),
+    iff: template.iff ? incrementIff(template.iff, 1) : "",
     departureTime: template.departureTime,
+    quantity,
+  };
+}
+
+// Advanced mode: the pasted template has no real per-aircraft data, so
+// every formation - including the first - starts blank for the user to
+// fill in themselves.
+export function makeBlankRow(quantity = 4): FormationRow {
+  return {
+    id: crypto.randomUUID(),
+    callsign: "",
+    acftType: "",
+    iff: "",
+    departureTime: "",
     quantity,
   };
 }

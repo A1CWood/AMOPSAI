@@ -18,7 +18,7 @@ export default async function WarmStatusPage() {
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      <div className="mx-auto flex w-full max-w-3xl items-center justify-between gap-2">
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2">
         <h1 className="text-lg font-semibold">Warm Status Schedule</h1>
         {!user ? (
           <Link href="/login?next=/warm-status" className="text-sm text-muted-foreground underline">
@@ -27,7 +27,7 @@ export default async function WarmStatusPage() {
         ) : null}
       </div>
       {error ? (
-        <p className="mx-auto w-full max-w-3xl text-sm text-destructive">
+        <p className="mx-auto w-full max-w-6xl text-sm text-destructive">
           Failed to load schedule: {error.message}
         </p>
       ) : (

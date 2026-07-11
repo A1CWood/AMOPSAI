@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { WarmStatusDayRangeForm } from "@/components/warm-status-day-range-form";
 import { WarmStatusEntryDialog } from "@/components/warm-status-entry-dialog";
 import { deleteDay, deleteEntry } from "@/app/(app)/warm-status/actions";
-import { sortEntries } from "@/lib/warm-status";
+import { buildEntryTimeline, sortEntries } from "@/lib/warm-status";
 import type { Database } from "@/lib/supabase/types";
 
 type Day = Database["public"]["Tables"]["warm_status_days"]["Row"] & {
@@ -21,16 +21,6 @@ function formatDayHeading(date: string) {
     month: "long",
     day: "numeric",
   });
-}
-
-function TimeField({ label, value }: { label: string; value: string | null }) {
-  if (!value) return null;
-  return (
-    <span className="text-sm">
-      <span className="text-muted-foreground">{label} </span>
-      <span className="font-mono">{value}</span>
-    </span>
-  );
 }
 
 export function WarmStatusBoard({ days, isEditor }: { days: Day[]; isEditor: boolean }) {
@@ -57,7 +47,7 @@ export function WarmStatusBoard({ days, isEditor }: { days: Day[]; isEditor: boo
   }
 
   return (
-    <div className="mx-auto flex max-w-3xl flex-col gap-4 p-4">
+    <div className="mx-auto flex max-w-6xl flex-col gap-4 p-4">
       {isEditor ? <WarmStatusDayRangeForm /> : null}
 
       {days.length === 0 ? (
@@ -65,67 +55,71 @@ export function WarmStatusBoard({ days, isEditor }: { days: Day[]; isEditor: boo
           No upcoming warm status days scheduled.
         </p>
       ) : (
-        days.map((day) => {
-          const entries = sortEntries(day.warm_status_entries);
-          return (
-            <Card key={day.id}>
-              <CardContent className="flex flex-col gap-3 py-4">
-                <div className="flex items-center justify-between gap-2">
-                  <h2 className="text-lg font-bold">{formatDayHeading(day.date)}</h2>
-                  {isEditor ? (
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      className="min-h-11 min-w-11 text-destructive hover:text-destructive"
-                      aria-label="Remove day"
-                      onClick={() => handleDeleteDay(day.id)}
-                    >
-                      <Trash2 className="size-4" />
-                    </Button>
-                  ) : null}
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  {entries.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">No flights scheduled.</p>
-                  ) : (
-                    entries.map((entry) => (
-                      <div
-                        key={entry.id}
-                        className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1 rounded-md border p-3"
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {days.map((day) => {
+            const entries = sortEntries(day.warm_status_entries);
+            return (
+              <Card key={day.id}>
+                <CardContent className="flex flex-col gap-3 py-4">
+                  <div className="flex items-center justify-between gap-2">
+                    <h2 className="text-lg font-bold">{formatDayHeading(day.date)}</h2>
+                    {isEditor ? (
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        className="min-h-11 min-w-11 text-destructive hover:text-destructive"
+                        aria-label="Remove day"
+                        onClick={() => handleDeleteDay(day.id)}
                       >
-                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-                          <span className="font-mono font-semibold">{entry.callsign}</span>
-                          <TimeField label="ETA" value={entry.eta} />
-                          <TimeField label="ETD" value={entry.etd} />
-                          <TimeField label="Show" value={entry.show_time} />
-                          <TimeField label="Open" value={entry.airfield_open} />
-                          <TimeField label="Close" value={entry.airfield_close} />
-                        </div>
-                        {isEditor ? (
-                          <div className="flex items-center gap-1">
-                            <WarmStatusEntryDialog mode="edit" entry={entry} />
-                            <Button
-                              variant="ghost"
-                              size="icon-sm"
-                              className="min-h-11 min-w-11 text-destructive hover:text-destructive"
-                              aria-label="Remove entry"
-                              onClick={() => handleDeleteEntry(entry.id)}
-                            >
-                              <Trash2 className="size-4" />
-                            </Button>
-                          </div>
-                        ) : null}
-                      </div>
-                    ))
-                  )}
-                </div>
+                        <Trash2 className="size-4" />
+                      </Button>
+                    ) : null}
+                  </div>
 
-                {isEditor ? <WarmStatusEntryDialog mode="add" dayId={day.id} /> : null}
-              </CardContent>
-            </Card>
-          );
-        })
+                  <div className="flex flex-col gap-3">
+                    {entries.length === 0 ? (
+                      <p className="text-sm text-muted-foreground">No flights scheduled.</p>
+                    ) : (
+                      entries.map((entry) => (
+                        <div key={entry.id} className="rounded-md border p-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-mono font-semibold">{entry.callsign}</span>
+                            {isEditor ? (
+                              <div className="flex items-center gap-1">
+                                <WarmStatusEntryDialog mode="edit" entry={entry} />
+                                <Button
+                                  variant="ghost"
+                                  size="icon-sm"
+                                  className="min-h-11 min-w-11 text-destructive hover:text-destructive"
+                                  aria-label="Remove entry"
+                                  onClick={() => handleDeleteEntry(entry.id)}
+                                >
+                                  <Trash2 className="size-4" />
+                                </Button>
+                              </div>
+                            ) : null}
+                          </div>
+                          <div className="mt-1 flex flex-col gap-0.5">
+                            {buildEntryTimeline(entry).map((row) => (
+                              <div key={row.label} className="flex gap-3 text-sm">
+                                <span className="w-24 shrink-0 font-mono text-muted-foreground">
+                                  {row.time}
+                                </span>
+                                <span>{row.label}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {isEditor ? <WarmStatusEntryDialog mode="add" dayId={day.id} /> : null}
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       )}
     </div>
   );
