@@ -22,12 +22,12 @@ export function ContactsSearch({ contacts }: { contacts: Contact[] }) {
   return (
     <div className="flex flex-col gap-4 p-4">
       <div className="relative">
-        <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-gray-500" />
         <Input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search contacts..."
-          className="h-11 border-[#555] bg-[#222] pl-9 text-white placeholder:text-gray-400"
+          className="h-11 border-[#555] bg-white pl-9 text-black placeholder:text-gray-500"
         />
       </div>
       <p className="text-sm text-muted-foreground">

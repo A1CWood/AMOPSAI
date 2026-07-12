@@ -18,10 +18,7 @@ export function WarmStatusDayRangeForm() {
   }
 
   return (
-    <form
-      action={handleSubmit}
-      className="flex flex-wrap items-end gap-3 rounded-lg border bg-card p-4"
-    >
+    <form action={handleSubmit} className="flex flex-wrap items-end justify-center gap-3 p-4">
       <div className="flex flex-col gap-2">
         <Label htmlFor="start">Start date</Label>
         <Input id="start" name="start" type="date" required className="h-11" />

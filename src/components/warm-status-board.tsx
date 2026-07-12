@@ -37,7 +37,7 @@ export function WarmStatusBoard({ days, isEditor }: { days: Day[]; isEditor: boo
   }
 
   return (
-    <div className="mx-auto max-w-6xl rounded-2xl bg-[#B0C4DE] p-6 text-black shadow-xl sm:p-8">
+    <div className="mx-auto max-w-2xl rounded-2xl bg-[#B0C4DE] p-6 text-black shadow-xl sm:p-8">
       <div className="relative mb-4 flex items-center justify-center">
         <h1 className="text-center text-xl font-bold">Warm Status Schedule</h1>
         {!isEditor ? (
@@ -58,7 +58,7 @@ export function WarmStatusBoard({ days, isEditor }: { days: Day[]; isEditor: boo
             No upcoming warm status days scheduled.
           </p>
         ) : (
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {days.map((day) => {
               const timeline = buildDayTimeline(day.warm_status_rows);
               return (
