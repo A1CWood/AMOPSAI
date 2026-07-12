@@ -24,6 +24,13 @@ function formatMonthDay(date: string) {
   return new Date(`${date}T00:00:00`).toLocaleDateString("en-US", { month: "long", day: "numeric" });
 }
 
+function widthClassForDayCount(count: number) {
+  if (count <= 1) return "max-w-lg";
+  if (count === 2) return "max-w-3xl";
+  if (count === 3) return "max-w-4xl";
+  return "max-w-5xl";
+}
+
 export function WarmStatusBoard({ days, isEditor }: { days: Day[]; isEditor: boolean }) {
   async function handleDeleteDay(id: string) {
     const formData = new FormData();
@@ -37,7 +44,9 @@ export function WarmStatusBoard({ days, isEditor }: { days: Day[]; isEditor: boo
   }
 
   return (
-    <div className="mx-auto max-w-5xl rounded-2xl bg-[#B0C4DE] p-6 text-black shadow-xl sm:p-8">
+    <div
+      className={`mx-auto ${widthClassForDayCount(days.length)} rounded-2xl bg-[#B0C4DE] p-6 text-black shadow-xl transition-[max-width] duration-200 sm:p-8`}
+    >
       <div className="relative mb-4 flex items-center justify-center">
         <h1 className="text-center text-xl font-bold">Warm Status Schedule</h1>
         {!isEditor ? (
