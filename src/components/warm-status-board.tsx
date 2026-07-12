@@ -37,7 +37,7 @@ export function WarmStatusBoard({ days, isEditor }: { days: Day[]; isEditor: boo
   }
 
   return (
-    <div className="mx-auto max-w-2xl rounded-2xl bg-[#B0C4DE] p-6 text-black shadow-xl sm:p-8">
+    <div className="mx-auto max-w-5xl rounded-2xl bg-[#B0C4DE] p-6 text-black shadow-xl sm:p-8">
       <div className="relative mb-4 flex items-center justify-center">
         <h1 className="text-center text-xl font-bold">Warm Status Schedule</h1>
         {!isEditor ? (
@@ -58,12 +58,12 @@ export function WarmStatusBoard({ days, isEditor }: { days: Day[]; isEditor: boo
             No upcoming warm status days scheduled.
           </p>
         ) : (
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {days.map((day) => {
               const timeline = buildDayTimeline(day.warm_status_rows);
               return (
                 <Card key={day.id} className="border-[#444] bg-[#333] text-white">
-                  <CardContent className="flex flex-col gap-3 py-4">
+                  <CardContent className="flex flex-col items-center gap-3 py-4">
                     <div className="text-center">
                       <h2 className="text-lg font-bold text-white">{formatDayOfWeek(day.date)}</h2>
                       <p className="text-sm text-gray-400">{formatMonthDay(day.date)}</p>
@@ -72,10 +72,10 @@ export function WarmStatusBoard({ days, isEditor }: { days: Day[]; isEditor: boo
                     {timeline.length === 0 ? (
                       <p className="text-center text-sm text-gray-400">Nothing scheduled.</p>
                     ) : (
-                      <div className="flex flex-col gap-1">
+                      <div className="flex w-fit flex-col gap-1">
                         {timeline.map((event, index) => (
                           <div key={index} className="flex gap-3 text-sm">
-                            <span className="w-14 shrink-0 font-mono text-gray-400">{event.time}</span>
+                            <span className="w-12 shrink-0 font-mono text-gray-400">{event.time}</span>
                             <span>{event.label}</span>
                           </div>
                         ))}
