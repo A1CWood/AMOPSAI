@@ -37,6 +37,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# generated parking map tile pyramid (see scripts/generate-parking-tiles.mjs)
+/tiles
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

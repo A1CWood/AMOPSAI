@@ -127,6 +127,112 @@ export type Database = {
           },
         ];
       };
+      parking_aprons: {
+        Row: {
+          id: string;
+          code: string;
+          label: string;
+          x: number;
+          y: number;
+          width: number;
+          height: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          code: string;
+          label: string;
+          x: number;
+          y: number;
+          width: number;
+          height: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          code?: string;
+          label?: string;
+          x?: number;
+          y?: number;
+          width?: number;
+          height?: number;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      parking_spots: {
+        Row: {
+          id: string;
+          apron_id: string;
+          label: string;
+          x: number;
+          y: number;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          apron_id: string;
+          label: string;
+          x: number;
+          y: number;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          apron_id?: string;
+          label?: string;
+          x?: number;
+          y?: number;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "parking_spots_apron_id_fkey";
+            columns: ["apron_id"];
+            isOneToOne: false;
+            referencedRelation: "parking_aprons";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      parking_assignments: {
+        Row: {
+          id: string;
+          spot_id: string;
+          aircraft: string;
+          start_time: string;
+          end_time: string | null;
+          notes: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          spot_id: string;
+          aircraft: string;
+          start_time: string;
+          end_time?: string | null;
+          notes?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          spot_id?: string;
+          aircraft?: string;
+          start_time?: string;
+          end_time?: string | null;
+          notes?: string | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "parking_assignments_spot_id_fkey";
+            columns: ["spot_id"];
+            isOneToOne: false;
+            referencedRelation: "parking_spots";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
   };
 };
