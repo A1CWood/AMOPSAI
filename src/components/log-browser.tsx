@@ -36,13 +36,13 @@ export function LogBrowser({ templates }: { templates: LogTemplate[] }) {
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Filter log templates..."
-          className="h-11 pl-9"
+          className="h-11 border-[#555] bg-[#222] pl-9 text-white placeholder:text-gray-400"
         />
       </div>
       <div className="flex flex-col gap-3">
         {filtered.map(({ template, text }) => (
           <button key={template.code} type="button" onClick={() => copyToClipboard(text)} className="text-left">
-            <Card className="transition-shadow hover:shadow-md">
+            <Card className="border-[#444] bg-[#333] text-white transition-shadow hover:shadow-md">
               <CardContent className="flex flex-col gap-2 py-4">
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary" className="font-mono">

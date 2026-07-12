@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 
@@ -15,12 +16,12 @@ type Day = Database["public"]["Tables"]["warm_status_days"]["Row"] & {
   warm_status_rows: Database["public"]["Tables"]["warm_status_rows"]["Row"][];
 };
 
-function formatDayHeading(date: string) {
-  return new Date(`${date}T00:00:00`).toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-  });
+function formatDayOfWeek(date: string) {
+  return new Date(`${date}T00:00:00`).toLocaleDateString("en-US", { weekday: "long" });
+}
+
+function formatMonthDay(date: string) {
+  return new Date(`${date}T00:00:00`).toLocaleDateString("en-US", { month: "long", day: "numeric" });
 }
 
 export function WarmStatusBoard({ days, isEditor }: { days: Day[]; isEditor: boolean }) {
@@ -36,57 +37,72 @@ export function WarmStatusBoard({ days, isEditor }: { days: Day[]; isEditor: boo
   }
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-4 p-4">
-      {isEditor ? <WarmStatusDayRangeForm /> : null}
+    <div className="mx-auto max-w-6xl rounded-2xl bg-[#B0C4DE] p-6 text-black shadow-xl sm:p-8">
+      <div className="relative mb-4 flex items-center justify-center">
+        <h1 className="text-center text-xl font-bold">Warm Status Schedule</h1>
+        {!isEditor ? (
+          <Link
+            href="/login?next=/warm-status"
+            className="absolute right-0 text-sm text-gray-700 underline"
+          >
+            Sign in to edit
+          </Link>
+        ) : null}
+      </div>
 
-      {days.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">
-          No upcoming warm status days scheduled.
-        </p>
-      ) : (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {days.map((day) => {
-            const timeline = buildDayTimeline(day.warm_status_rows);
-            return (
-              <Card key={day.id}>
-                <CardContent className="flex flex-col gap-3 py-4">
-                  <div className="flex items-center justify-between gap-2">
-                    <h2 className="text-lg font-bold">{formatDayHeading(day.date)}</h2>
-                    {isEditor ? (
-                      <Button
-                        variant="ghost"
-                        size="icon-sm"
-                        className="min-h-11 min-w-11 text-destructive hover:text-destructive"
-                        aria-label="Remove day"
-                        onClick={() => handleDeleteDay(day.id)}
-                      >
-                        <Trash2 className="size-4" />
-                      </Button>
-                    ) : null}
-                  </div>
+      <div className="flex flex-col gap-4">
+        {isEditor ? <WarmStatusDayRangeForm /> : null}
 
-                  {timeline.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Nothing scheduled.</p>
-                  ) : (
-                    <div className="flex flex-col gap-1">
-                      {timeline.map((event, index) => (
-                        <div key={index} className="flex gap-3 text-sm">
-                          <span className="w-14 shrink-0 font-mono text-muted-foreground">
-                            {event.time}
-                          </span>
-                          <span>{event.label}</span>
-                        </div>
-                      ))}
+        {days.length === 0 ? (
+          <p className="py-8 text-center text-sm text-gray-700">
+            No upcoming warm status days scheduled.
+          </p>
+        ) : (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {days.map((day) => {
+              const timeline = buildDayTimeline(day.warm_status_rows);
+              return (
+                <Card key={day.id} className="border-[#444] bg-[#333] text-white">
+                  <CardContent className="flex flex-col gap-3 py-4">
+                    <div className="text-center">
+                      <h2 className="text-lg font-bold text-white">{formatDayOfWeek(day.date)}</h2>
+                      <p className="text-sm text-gray-400">{formatMonthDay(day.date)}</p>
                     </div>
-                  )}
 
-                  {isEditor ? <WarmStatusEditDayDialog day={day} /> : null}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+                    {timeline.length === 0 ? (
+                      <p className="text-center text-sm text-gray-400">Nothing scheduled.</p>
+                    ) : (
+                      <div className="flex flex-col gap-1">
+                        {timeline.map((event, index) => (
+                          <div key={index} className="flex gap-3 text-sm">
+                            <span className="w-14 shrink-0 font-mono text-gray-400">{event.time}</span>
+                            <span>{event.label}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {isEditor ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <WarmStatusEditDayDialog day={day} />
+                        <Button
+                          variant="ghost"
+                          size="icon-xs"
+                          className="text-destructive hover:text-destructive"
+                          aria-label="Remove day"
+                          onClick={() => handleDeleteDay(day.id)}
+                        >
+                          <Trash2 className="size-3" />
+                        </Button>
+                      </div>
+                    ) : null}
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

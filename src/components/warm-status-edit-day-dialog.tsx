@@ -125,8 +125,8 @@ export function WarmStatusEditDayDialog({ day }: { day: Day }) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger render={<Button size="sm" className="min-h-11 gap-1" />}>
-        <Pencil className="size-4" />
+      <DialogTrigger render={<Button size="xs" className="gap-1" />}>
+        <Pencil className="size-3" />
         Edit day
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">

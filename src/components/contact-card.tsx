@@ -14,7 +14,7 @@ export function ContactCard({ contact }: { contact: Contact }) {
   const hasExtra = Boolean(contact.email || contact.address);
 
   return (
-    <Card>
+    <Card className="border-[#444] bg-[#333] text-white">
       <CardContent className="flex flex-col gap-1 py-4">
         {contact.company ? (
           <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">

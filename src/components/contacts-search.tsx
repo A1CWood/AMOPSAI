@@ -27,7 +27,7 @@ export function ContactsSearch({ contacts }: { contacts: Contact[] }) {
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Search contacts..."
-          className="h-11 pl-9"
+          className="h-11 border-[#555] bg-[#222] pl-9 text-white placeholder:text-gray-400"
         />
       </div>
       <p className="text-sm text-muted-foreground">
