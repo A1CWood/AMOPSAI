@@ -30,6 +30,13 @@ export function toViewportRect(rect: NormalizedRect, imageAspectRatio: number): 
   };
 }
 
+// Inverse of toViewportPoint - used to turn a map click (in OpenSeadragon
+// viewport coordinates) back into the width/height-normalized coordinates
+// that parking_aprons/parking_spots store.
+export function fromViewportPoint(point: NormalizedPoint, imageAspectRatio: number): NormalizedPoint {
+  return { x: point.x, y: point.y * imageAspectRatio };
+}
+
 export type ParkingApron = {
   id: string;
   code: string;

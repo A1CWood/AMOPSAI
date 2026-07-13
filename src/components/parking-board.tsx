@@ -98,6 +98,7 @@ export function ParkingBoard({
           assignments={assignments}
           selectedSpotId={selectedSpotId}
           onSelectSpot={setSelectedSpotId}
+          isEditor={isEditor}
         />
 
         <div className="rounded-lg border border-[#444] bg-[#222] p-4 text-sm text-white">

@@ -63,3 +63,74 @@ export async function deleteAssignment(formData: FormData) {
 
   revalidatePath("/parking");
 }
+
+function numberField(formData: FormData, key: string): number {
+  const value = Number(formData.get(key));
+  if (!Number.isFinite(value)) throw new Error(`Invalid ${key}.`);
+  return value;
+}
+
+export async function createApron(formData: FormData) {
+  const supabase = await requireUser();
+  const code = String(formData.get("code") ?? "").trim();
+  const label = String(formData.get("label") ?? "").trim();
+  if (!code) throw new Error("Apron code is required.");
+  if (!label) throw new Error("Apron label is required.");
+
+  const { data, error } = await supabase
+    .from("parking_aprons")
+    .insert({
+      code,
+      label,
+      x: numberField(formData, "x"),
+      y: numberField(formData, "y"),
+      width: numberField(formData, "width"),
+      height: numberField(formData, "height"),
+    })
+    .select()
+    .single();
+  if (error) throw new Error(`Failed to create apron: ${error.message}`);
+
+  revalidatePath("/parking");
+  return data;
+}
+
+export async function deleteApron(formData: FormData) {
+  const supabase = await requireUser();
+  const id = String(formData.get("id") ?? "");
+  if (!id) throw new Error("Missing apron.");
+
+  const { error } = await supabase.from("parking_aprons").delete().eq("id", id);
+  if (error) throw new Error(`Failed to delete apron: ${error.message}`);
+
+  revalidatePath("/parking");
+}
+
+export async function createSpot(formData: FormData) {
+  const supabase = await requireUser();
+  const apronId = String(formData.get("apronId") ?? "");
+  const label = String(formData.get("label") ?? "").trim();
+  if (!apronId) throw new Error("Missing apron.");
+  if (!label) throw new Error("Spot label is required.");
+
+  const { error } = await supabase.from("parking_spots").insert({
+    apron_id: apronId,
+    label,
+    x: numberField(formData, "x"),
+    y: numberField(formData, "y"),
+  });
+  if (error) throw new Error(`Failed to create spot: ${error.message}`);
+
+  revalidatePath("/parking");
+}
+
+export async function deleteSpot(formData: FormData) {
+  const supabase = await requireUser();
+  const id = String(formData.get("id") ?? "");
+  if (!id) throw new Error("Missing spot.");
+
+  const { error } = await supabase.from("parking_spots").delete().eq("id", id);
+  if (error) throw new Error(`Failed to delete spot: ${error.message}`);
+
+  revalidatePath("/parking");
+}
